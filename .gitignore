@@ -1,0 +1,14 @@
+# Ignore all CMake build directories
+cmake-build-*/
+
+# Ignore Windows metadata files
+*.Identifier
+
+# Ignore compiled executables (the actual program created by the build)
+# Usually found inside the build folders, but good to have here too
+build/
+bin/
+
+# IDE specific files
+.idea/
+.vscode/
