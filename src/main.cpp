@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "./tokenization.h"
+#include "./parser.h"
 
 std::string tokens_to_asm(const std::vector<Token>& tokens)
 {
@@ -52,6 +53,19 @@ int main(int argc, char* argv[])
     Tokenizer tokenizer(std::move(contents));
 
     std::vector<Token> tokens = tokenizer.tokenize();
+
+    for (const Token& token : tokens) {
+        if (token.type == TokenType::exit) {
+            std::cout << "Token: EXIT" << std::endl;
+        }
+        else if (token.type == TokenType::int_lit) {
+            // Remember, value is an optional, so we use .value() to unwrap it!
+            std::cout << "Token: INT_LIT (Value: " << token.value.value() << ")" << std::endl;
+        }
+        else if (token.type == TokenType::semi) {
+            std::cout << "Token: SEMI (;)" << std::endl;
+        }
+    }
 
     {
         std::fstream file("out.asm", std::ios::out);

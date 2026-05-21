@@ -25,7 +25,6 @@ public:
 
     inline std::vector<Token> tokenize()
     {
-        std::cout << "hi" << std::endl;
         std::vector<Token> tokens;
         std::string buf;
 
@@ -34,7 +33,7 @@ public:
             if (std::isalpha(peak().value()))
             {
                 buf.push_back(consume());
-                while (peak().value() && std::isalnum(peak().value()))
+                while (peak().has_value() && std::isalnum(peak().value()))
                 {
                     buf.push_back(consume());
                 }
@@ -66,10 +65,14 @@ public:
             }
             else if (peak().value() == ';')
             {
+                consume();
                 tokens.push_back({.type = TokenType::semi});
+                std::cout << "hi" << std::endl;
+                continue;
             }
             else if (std::isspace(peak().value()))
             {
+                consume();
                 continue;
             }
             else
@@ -84,18 +87,18 @@ public:
 
 private:
 
-    [[nodiscard]]std::optional<char> peak(int ahead = 1) const
+    [[nodiscard]] inline std::optional<char> peak(int ahead = 1) const
     {
-        if (m_index + ahead >= m_src.length())
+        if (m_index + ahead > m_src.length())
         {
             return {};
         } else
         {
-          return m_src.at(m_index);
+          return m_src.at(m_index );
         }
     }
 
-    char consume()
+    inline char consume()
     {
         return m_src.at(m_index++);
     }
