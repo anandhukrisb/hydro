@@ -41,8 +41,11 @@ public:
         std::optional<node::NodeExit> exit_node;
         while (peek().has_value())
         {
-            if (peek().value().type == TokenType::exit)
+            if (peek().value().type == TokenType::exit
+                && peek(1).has_value()
+                && peek(1).value().type == TokenType::open_paren) // The open paranthesis infinite loop should be fixed.
             {
+                consume();
                 consume();
                 if (auto node_expr = parse_expr())
                 {
@@ -52,12 +55,18 @@ public:
                     std::cerr << "Invalid expression" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-
+                if (peek().has_value() && peek().value().type == TokenType::close_paren) {
+                    consume();
+                }
+                else {
+                    std::cerr << "Expected `)`" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
                 if (peek().has_value() && peek().value().type == TokenType::semi) {
                     consume();
                 }
                 else {
-                    std::cerr << "Invalid expression" << std::endl;
+                    std::cerr << "Expected `;`" << std::endl;
                     exit(EXIT_FAILURE);
                 }
             }
@@ -68,14 +77,14 @@ public:
 
 private:
 
-    [[nodiscard]] inline std::optional<Token> peek(int ahead = 1) const
+    [[nodiscard]] inline std::optional<Token> peek(int offset = 0) const
     {
-        if (m_index + ahead > m_tokens.size())
+        if (m_index + offset >= m_tokens.size())
         {
             return {};
         } else
         {
-            return m_tokens.at(m_index );
+            return m_tokens.at(m_index + offset);
         }
     }
 
