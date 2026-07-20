@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(hydrogen)
+project(hydro)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(hydro src/main.cpp
         src/tokenization.h
-        src/parser.h)
+        src/parser.h
+        src/genration.h
+)

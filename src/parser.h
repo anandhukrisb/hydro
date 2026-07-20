@@ -1,7 +1,7 @@
 #pragma once
 
 #include "./tokenization.h"
-
+#include <iostream>
 namespace node
 {
     struct NodeExpr
@@ -24,30 +24,39 @@ public:
     {
     }
 
-    std::optinal<NodeExpr> parse_expr()
+    std::optional<node::NodeExpr> parse_expr()
     {
-        if (peak().has_value() && peak().value().type == TokenType::int_lit)
+        if (peek().has_value() && peek().value().type == TokenType::int_lit)
         {
-            return {.int_lit = consume()};
+            return node::NodeExpr {.int_lit = consume()};
         } else
         {
             return {};
         }
+
     }
 
-    std::optional<NodeExit> parse()
+    std::optional<node::NodeExit> parse()
     {
-        std::optional<NodeExit> exit_node;
-        while (peak().has_value())
+        std::optional<node::NodeExit> exit_node;
+        while (peek().has_value())
         {
-            if (peak().value().type == TokenType::exit)
+            if (peek().value().type == TokenType::exit)
             {
                 consume();
                 if (auto node_expr = parse_expr())
                 {
-                    exit_node = NodeExit {.expr = node_expr.value()};
+                    exit_node = node::NodeExit {.expr = node_expr.value()};
                 } else
                 {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                if (peek().has_value() && peek().value().type == TokenType::semi) {
+                    consume();
+                }
+                else {
                     std::cerr << "Invalid expression" << std::endl;
                     exit(EXIT_FAILURE);
                 }
@@ -59,7 +68,7 @@ public:
 
 private:
 
-    [[nodiscard]] inline std::optional<Token> peak(int ahead = 1) const
+    [[nodiscard]] inline std::optional<Token> peek(int ahead = 1) const
     {
         if (m_index + ahead > m_tokens.size())
         {
@@ -76,6 +85,6 @@ private:
     }
 
     const std::vector<Token> m_tokens;
-    size_t m_index;
+    size_t m_index = 0;
 
 };

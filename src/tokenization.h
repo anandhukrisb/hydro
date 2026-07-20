@@ -28,12 +28,12 @@ public:
         std::vector<Token> tokens;
         std::string buf;
 
-        while (peak().has_value())
+        while (peek().has_value())
         {
-            if (std::isalpha(peak().value()))
+            if (std::isalpha(peek().value()))
             {
                 buf.push_back(consume());
-                while (peak().has_value() && std::isalnum(peak().value()))
+                while (peek().has_value() && std::isalnum(peek().value()))
                 {
                     buf.push_back(consume());
                 }
@@ -50,11 +50,11 @@ public:
                     exit(EXIT_FAILURE);
                 }
             }
-            else if (std::isdigit(peak().value()))
+            else if (std::isdigit(peek().value()))
             {
                 buf.push_back(consume());
 
-                while (peak().has_value() && std::isdigit(peak().value()))
+                while (peek().has_value() && std::isdigit(peek().value()))
                 {
                     buf.push_back(consume());
                 }
@@ -63,14 +63,13 @@ public:
                 buf.clear();
                 continue;
             }
-            else if (peak().value() == ';')
+            else if (peek().value() == ';')
             {
                 consume();
                 tokens.push_back({.type = TokenType::semi});
-                std::cout << "hi" << std::endl;
                 continue;
             }
-            else if (std::isspace(peak().value()))
+            else if (std::isspace(peek().value()))
             {
                 consume();
                 continue;
@@ -87,14 +86,14 @@ public:
 
 private:
 
-    [[nodiscard]] inline std::optional<char> peak(int ahead = 1) const
+    [[nodiscard]] inline std::optional<char> peek(int ahead = 1) const
     {
         if (m_index + ahead > m_src.length())
         {
             return {};
         } else
         {
-          return m_src.at(m_index );
+          return m_src.at(m_index);
         }
     }
 
@@ -104,5 +103,5 @@ private:
     }
 
     const std::string m_src;
-    int m_index = 0;
+    size_t m_index = 0;
 };

@@ -4,32 +4,12 @@
 #include <optional>
 #include <vector>
 
-#include "./tokenization.h"
+#include "genration.h"
 #include "./parser.h"
+#include "./tokenization.h"
 
-std::string tokens_to_asm(const std::vector<Token>& tokens)
-{
-    std::stringstream output;
-    output << "global _start\n_start:\n";
-    for (int i = 0; i < tokens.size(); i++)
-    {
-        const Token& token = tokens.at(i);
-        if (token.type == TokenType::exit)
-        {
-            if ( i + 1 < tokens.size() && tokens.at(i + 1).type == TokenType::int_lit)
-            {
-                if (i + 2 < tokens.size() && tokens.at(i + 2).type == TokenType::semi)
-                {
-                    output << "    mov rax, 60\n";
-                    output << "    mov rdi, " << tokens.at(i + 1).value.value() << "\n";    
-                    output << "    syscall";
-                }
-            }
-        }
-    }
 
-    return output.str();
-}
+
 
 int main(int argc, char* argv[])
 {
@@ -54,23 +34,35 @@ int main(int argc, char* argv[])
 
     std::vector<Token> tokens = tokenizer.tokenize();
 
-    for (const Token& token : tokens) {
-        if (token.type == TokenType::exit) {
-            std::cout << "Token: EXIT" << std::endl;
-        }
-        else if (token.type == TokenType::int_lit) {
-            // Remember, value is an optional, so we use .value() to unwrap it!
-            std::cout << "Token: INT_LIT (Value: " << token.value.value() << ")" << std::endl;
-        }
-        else if (token.type == TokenType::semi) {
-            std::cout << "Token: SEMI (;)" << std::endl;
-        }
+    // for (const Token& token : tokens) {
+    //     if (token.type == TokenType::exit) {
+    //         std::cout << "Token: EXIT" << std::endl;
+    //     }
+    //     else if (token.type == TokenType::int_lit) {
+    //         // Remember, value is an optional, so we use .value() to unwrap it!
+    //         std::cout << "Token: INT_LIT (Value: " << token.value.value() << ")" << std::endl;
+    //     }
+    //     else if (token.type == TokenType::semi) {
+    //         std::cout << "Token: SEMI (;)" << std::endl;
+    //     }
+    // }
+
+    Parser parser(std::move(tokens));
+    std::optional<node::NodeExit> tree = parser.parse();
+
+    if (!tree.has_value()) {
+        std::cerr << "Failed to parse tree" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
+
     {
+        Generator generator(tree.value());
         std::fstream file("out.asm", std::ios::out);
-        file << tokens_to_asm(tokens);
+        file << generator.generate();
     }
+
+
 
     system("nasm -felf64 out.asm");
     system("ld -o out out.o");
