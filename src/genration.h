@@ -29,7 +29,7 @@ public:
         std::visit(expr_visitor, expr.var);
     }
 
-    [[nodiscard]] std::string gen_stmt(const node::NodeStmt& stmt) {
+    void gen_stmt(const node::NodeStmt& stmt) {
         struct StmtVisitor {
 
             Generator* gen;
@@ -40,7 +40,7 @@ public:
                 gen->gen_expr(stmt_exit.expr);
                 gen->m_output << "    mov rax, 60\n";
                 gen->m_output << "    pop rdi\n";
-                gen->m_output << "    syscall";
+                gen->m_output << "    syscall\n";
             }
 
             void operator()(const node::NodeStmtLet& stmt_let) {
@@ -54,7 +54,7 @@ public:
 
     [[nodiscard]] std::string gen_prog() {
 
-        "global _start\n_start:\n";
+        m_output << "global _start\n_start:\n";
 
         for (const node::NodeStmt& stmt : m_prog.stmts) {
             gen_stmt(stmt);
@@ -64,7 +64,7 @@ public:
         m_output << "    mov rdi, 0\n";
         m_output << "    syscall";
 
-        return output.str();
+        return m_output.str();
     }
 private:
     const node::NodeProg m_prog;
