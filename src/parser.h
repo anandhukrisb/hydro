@@ -2,15 +2,43 @@
 
 #include "./tokenization.h"
 #include <iostream>
+#include <variant>
 namespace node
 {
-    struct NodeExpr
-    {
+
+    struct NodeExprIntLit {
         Token int_lit;
     };
-    struct NodeExit
+
+    struct NodeExprIdent {
+        Token ident;
+    };
+
+    struct NodeExpr
     {
+        std::variant<NodeExprIntLit, NodeExprIdent> var;
+    };
+
+    struct NodeStmtExit {
         NodeExpr expr;
+    };
+
+    struct NodeStmtLet {
+        Token ident;
+        NodeExpr expr;
+    };
+
+    struct NodeStmtVar {
+        Token ident;
+        NodeExpr expr;
+    };
+
+    struct NodeStmt {
+        std::variant<NodeStmtExit, NodeStmtLet> var;
+    };
+
+    struct NodeProg {
+        std::vector<NodeStmt> stmts;
     };
 
 }
@@ -28,51 +56,93 @@ public:
     {
         if (peek().has_value() && peek().value().type == TokenType::int_lit)
         {
-            return node::NodeExpr {.int_lit = consume()};
-        } else
+            return node::NodeExpr { .var = node::NodeExprIntLit { .int_lit = consume() } };
+        }
+        else if (peek().has_value() && peek().value().type == TokenType::ident) {
+            return node::NodeExpr { .var = node::NodeExprIdent { .ident = consume() } };
+        }
+        else
         {
             return {};
         }
 
     }
 
-    std::optional<node::NodeExit> parse()
-    {
-        std::optional<node::NodeExit> exit_node;
-        while (peek().has_value())
-        {
-            if (peek().value().type == TokenType::exit
+    std::optional<node::NodeStmt> parse_stmt() {
+        if (peek().value().type == TokenType::exit
                 && peek(1).has_value()
                 && peek(1).value().type == TokenType::open_paren) // The open paranthesis infinite loop should be fixed.
+        {
+            consume();
+            consume();
+
+            node::NodeStmtExit stmt_exit;
+            if (auto node_expr = parse_expr())
             {
+                stmt_exit = {.expr = node_expr.value()};
+            } else
+            {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if (peek().has_value() && peek().value().type == TokenType::close_paren) {
                 consume();
+            }
+            else {
+                std::cerr << "Expected `)`" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if (peek().has_value() && peek().value().type == TokenType::semi) {
                 consume();
-                if (auto node_expr = parse_expr())
-                {
-                    exit_node = node::NodeExit {.expr = node_expr.value()};
-                } else
-                {
-                    std::cerr << "Invalid expression" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                if (peek().has_value() && peek().value().type == TokenType::close_paren) {
-                    consume();
-                }
-                else {
-                    std::cerr << "Expected `)`" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                if (peek().has_value() && peek().value().type == TokenType::semi) {
-                    consume();
-                }
-                else {
-                    std::cerr << "Expected `;`" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
+            }
+            else {
+                std::cerr << "Expected `;`" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            return node::NodeStmt{.var = stmt_exit};
+        }
+        else if (peek().has_value() && peek().value().type == TokenType::let
+              && peek(1).has_value() && peek(1).value().type == TokenType::ident
+              && peek(2).has_value() && peek(2).value().type == TokenType::eq) {
+
+            consume();
+            auto stmt_let = node::NodeStmtLet {.ident = consume()};
+            consume();
+
+            if (auto expr = parse_expr()) {
+                stmt_let.expr = expr.value();
+            }
+            else {
+                std::cerr << "Invalid Expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if (peek().has_value() && peek().value().type == TokenType::semi) {
+                consume();
+            }
+            else {
+                std::cerr << "Expected `;`" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            return node::NodeStmt { .var = stmt_let };
+        }
+        else {
+            return {};
+        }
+    }
+
+    std::optional<node::NodeProg> parse_prog() {
+        node::NodeProg prog;
+        while (peek().has_value()) {
+            if (auto stmt = parse_stmt()) {
+                prog.stmts.push_back(stmt.value());
+            }
+            else {
+                std::cerr << "Invalid statement" << std::endl;
+                exit(EXIT_FAILURE);
             }
         }
-        m_index = 0;
-        return exit_node;
     }
 
 private:

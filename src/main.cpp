@@ -9,8 +9,6 @@
 #include "./tokenization.h"
 
 
-
-
 int main(int argc, char* argv[])
 {
 
@@ -48,7 +46,7 @@ int main(int argc, char* argv[])
     // }
 
     Parser parser(std::move(tokens));
-    std::optional<node::NodeExit> tree = parser.parse();
+    std::optional<node::NodeProg> tree = parser.parse_prog();
 
     if (!tree.has_value()) {
         std::cerr << "Failed to parse tree" << std::endl;
