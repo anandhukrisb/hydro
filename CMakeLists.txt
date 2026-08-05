@@ -9,4 +9,5 @@ add_executable(hydro src/main.cpp
         src/tokenization.h
         src/parser.h
         src/genration.h
+        src/arena.h
 )
