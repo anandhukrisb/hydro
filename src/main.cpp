@@ -4,7 +4,6 @@
 #include <optional>
 #include <vector>
 
-#include "arena.h"
 #include "genration.h"
 #include "./parser.h"
 #include "./tokenization.h"
