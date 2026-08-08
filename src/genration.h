@@ -1,4 +1,6 @@
 #pragma once
+#include <assert.h>
+
 #include "parser.h"
 #include <unordered_map>
 
@@ -9,71 +11,94 @@ public:
 
     }
 
-    void gen_expr(const node::NodeExpr expr) {
-
-        struct ExprVisitor {
-
+    void gen_term(const node::NodeTerm* term) {
+        struct TermVisitor {
             Generator* gen;
 
-            void operator()(const node::NodeExprIntLit& expr_int_lit) const
-            {
-                gen->m_output << "    mov rax, " << expr_int_lit.int_lit.value.value() << "\n";
+            void operator()(const node::NodeTermIntlit* term_int_lit) const {
+                gen->m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
                 gen->push("rax");
             }
 
-            void operator()(const node::NodeExprIdent& expr_ident) {
-                if (!gen->m_vars.contains(expr_ident.ident.value.value())) {
-                    std::cerr << "Undeclared variable: " << expr_ident.ident.value.value() << std::endl;
+            void operator()(const node::NodeTermIdent* term_ident) const {
+                if (!gen->m_vars.contains(term_ident->ident.value.value())) {
+                    std::cerr << "Undeclared variable: " << term_ident->ident.value.value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                const auto& var = gen->m_vars.at(expr_ident.ident.value.value());
+                const auto& var = gen->m_vars.at(term_ident->ident.value.value());
                 std::stringstream offset;
                 offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_loc - 1) * 8 << "]\n";
                 gen->push(offset.str());
             }
         };
 
-        ExprVisitor expr_visitor{ .gen = this };
-        std::visit(expr_visitor, expr.var);
+        TermVisitor term_visitor { .gen = this };
+        std::visit(term_visitor, term->var);
     }
 
-    void gen_stmt(const node::NodeStmt& stmt) {
+    void gen_expr(const node::NodeExpr* expr) {
+
+        struct ExprVisitor {
+
+            Generator* gen;
+
+            void operator()(const node::NodeTerm* term) const
+            {
+                gen->gen_term(term);
+            }
+
+            void operator()(const node::NodeBinExpr* expr)
+            {
+                gen->gen_expr(expr->add->lhs);
+                gen->gen_expr(expr->add->rhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    add rax, rbx\n";
+                gen->push("rax");
+            }
+        };
+
+        ExprVisitor expr_visitor{ .gen = this };
+        std::visit(expr_visitor, expr->var);
+    }
+
+    void gen_stmt(const node::NodeStmt* stmt) {
         struct StmtVisitor {
 
             Generator* gen;
 
-            void operator()(const node::NodeStmtExit& stmt_exit) const
+            void operator()(const node::NodeStmtExit* stmt_exit) const
             {
-                gen->gen_expr(stmt_exit.expr);
+                gen->gen_expr(stmt_exit->expr);
                 gen->m_output << "    mov rax, 60\n";
                 gen->pop("rdi");
                 gen->m_output << "    syscall\n";
             }
 
-            void operator()(const node::NodeStmtLet& stmt_let) {
-                if (gen->m_vars.contains(stmt_let.ident.value.value())) {
-                    std::cerr << "Identifier already used: " << stmt_let.ident.value.value() << std::endl;
+            void operator()(const node::NodeStmtLet* stmt_let) {
+                if (gen->m_vars.contains(stmt_let->ident.value.value())) {
+                    std::cerr << "Identifier already used: " << stmt_let->ident.value.value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 else {
                     gen->m_vars.insert(
-                        { stmt_let.ident.value.value(), Var { .stack_loc = gen->m_stack_size }
+                        { stmt_let->ident.value.value(), Var { .stack_loc = gen->m_stack_size }
                     });
 
-                    gen->gen_expr(stmt_let.expr);
+                    gen->gen_expr(stmt_let->expr);
                 }
             }
         };
 
         StmtVisitor visitor{ .gen = this };
-        std::visit(visitor, stmt.var);
+        std::visit(visitor, stmt->var);
     }
 
     [[nodiscard]] std::string gen_prog() {
 
         m_output << "global _start\n_start:\n";
 
-        for (const node::NodeStmt& stmt : m_prog.stmts) {
+        for (const node::NodeStmt* stmt : m_prog.stmts) {
             gen_stmt(stmt);
         }
 
