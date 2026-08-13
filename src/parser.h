@@ -22,13 +22,13 @@ namespace node
         NodeExpr* rhs;
     };
 
-    // struct NodeBinExprMulti {
-    //     NodeExpr* lhs;
-    //     NodeExpr* rhs;
-    // };
+    struct NodeBinExprMulti {
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
 
     struct NodeBinExpr {
-        NodeBinExprAdd* add;
+        std::variant<NodeBinExprAdd*, NodeBinExprMulti*> var;
     };
 
     struct NodeTerm {
@@ -74,7 +74,8 @@ public:
     {
     }
 
-    std::optional<node::NodeTerm*> parse_term() {
+    std::optional<node::NodeTerm*> parse_term()
+    {
         if (auto int_lit = try_consume(TokenType::int_lit))
         {
             auto term_int_lit = m_allocator.alloc<node::NodeTermIntlit>();
@@ -94,17 +95,26 @@ public:
 
     std::optional<node::NodeExpr*> parse_expr()
     {
+        std::optional<node::NodeTerm*> term_lhs = parse_term();
+        if (!term_lhs.has_value()) {
+            return {};
+        }
+
+        // while (true) {
+        //     std::optional<Token> curr_tok = peek().value();
+        //
+        // }
         if (auto term = parse_term()) {
             if (try_consume(TokenType::plus).has_value()) {
                 auto bin_expr = m_allocator.alloc<node::NodeBinExpr>();
-                    auto bin_expr_add = m_allocator.alloc<node::NodeBinExprAdd>();
-                    auto lhs_expr = m_allocator.alloc<node::NodeExpr>();
-                    lhs_expr->var =term.value();
-                    bin_expr_add->lhs = lhs_expr;
+                auto bin_expr_add = m_allocator.alloc<node::NodeBinExprAdd>();
+                auto lhs_expr = m_allocator.alloc<node::NodeExpr>();
+                lhs_expr->var =term.value();
+                bin_expr_add->lhs = lhs_expr;
 
                 if (auto rhs = parse_expr()) {
                     bin_expr_add->rhs = rhs.value();
-                    bin_expr->add = bin_expr_add;
+                    bin_expr->var = bin_expr_add;
                     auto expr = m_allocator.alloc<node::NodeExpr>();
                     expr->var = bin_expr;
                     return expr;

@@ -1,3 +1,3 @@
-let x = 1 + 2 + 5 + 3;
-let y = 8;
-exit(x);
+let x = 1 + 2 + 5;
+let y = x + 8;
+exit(y);
