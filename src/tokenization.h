@@ -17,6 +17,17 @@ enum class TokenType
     asterisk,
 };
 
+std::optional<int> bin_prec(TokenType type) {
+    switch (type) {
+        case TokenType::plus:
+            return 0;
+        case TokenType::asterisk:
+            return 1;
+        default:
+            return {};
+    }
+}
+
 struct Token
 {
     TokenType type;

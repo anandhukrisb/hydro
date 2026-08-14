@@ -93,17 +93,35 @@ public:
         }
     }
 
-    std::optional<node::NodeExpr*> parse_expr()
+    std::optional<node::NodeExpr*> parse_expr(int min_prec = 0)
     {
         std::optional<node::NodeTerm*> term_lhs = parse_term();
         if (!term_lhs.has_value()) {
             return {};
         }
 
-        // while (true) {
-        //     std::optional<Token> curr_tok = peek().value();
-        //
-        // }
+        while (true) {
+            std::optional<Token> curr_tok = peek();
+            std::optional<int> prec;
+            if (!curr_tok.has_value()) {
+                prec = bin_prec(curr_tok->type);
+                if (!prec.has_value() || prec < min_prec) {
+                    break;
+                }
+            }
+            auto expr = m_allocator.alloc<node::NodeBinExpr>();
+            Token op = consume();
+            if (op.type == TokenType::plus) {
+                auto add = m_allocator.alloc<node::NodeBinExprAdd>();
+                expr->var = add;
+            }
+            else if (op.type == TokenType::asterisk) {
+                auto multi = m_allocator.alloc<node::NodeBinExprMulti>();
+                expr->var = multi;
+            }
+            int next_min_prec = prec.value() + 1;
+
+        }
         if (auto term = parse_term()) {
             if (try_consume(TokenType::plus).has_value()) {
                 auto bin_expr = m_allocator.alloc<node::NodeBinExpr>();
