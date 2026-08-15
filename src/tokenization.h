@@ -15,6 +15,8 @@ enum class TokenType
     eq,
     plus,
     asterisk,
+    sub,
+    div,
 };
 
 std::optional<int> bin_prec(TokenType type) {
@@ -65,7 +67,7 @@ public:
                     continue;
                 }
                 else if ( buf == "let") {
-                    tokens.push_back({.type = TokenType::let,});
+                    tokens.push_back({.type = TokenType::let});
                     buf.clear();
                     continue;
                 }

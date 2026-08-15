@@ -49,8 +49,13 @@ public:
                 gen->push("rax");
             }
 
-            void operator() (const node::NodeBinExprMulti* muli) const {
-                assert(false);
+            void operator() (const node::NodeBinExprMulti* multi) const {
+                gen->gen_expr(multi->lhs);
+                gen->gen_expr(multi->rhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    mul rax, rbx\n";
+                gen->push("rax");
             }
         };
 
