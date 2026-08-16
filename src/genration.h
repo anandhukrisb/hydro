@@ -15,6 +15,10 @@ public:
         struct TermVisitor {
             Generator* gen;
 
+            void operator() (const node::NodeTermParen* term_paren) const {
+                gen->gen_expr(term_paren->expr);
+            }
+
             void operator()(const node::NodeTermIntlit* term_int_lit) const {
                 gen->m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
                 gen->push("rax");
@@ -40,9 +44,18 @@ public:
         struct BinExprVisitor {
             Generator* gen;
 
+            void operator() (const node::NodeBinExprSub* sub) const {
+                gen->gen_expr(sub->rhs);
+                gen->gen_expr(sub->lhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    sub rax, rbx\n";
+                gen->push("rax");
+            }
+
             void operator() (const node::NodeBinExprAdd* add) const {
-                gen->gen_expr(add->lhs);
                 gen->gen_expr(add->rhs);
+                gen->gen_expr(add->lhs);
                 gen->pop("rax");
                 gen->pop("rbx");
                 gen->m_output << "    add rax, rbx\n";
@@ -50,11 +63,20 @@ public:
             }
 
             void operator() (const node::NodeBinExprMulti* multi) const {
-                gen->gen_expr(multi->lhs);
                 gen->gen_expr(multi->rhs);
+                gen->gen_expr(multi->lhs);
                 gen->pop("rax");
                 gen->pop("rbx");
                 gen->m_output << "    mul rax, rbx\n";
+                gen->push("rax");
+            }
+
+            void operator() (const node::NodeBinExprDiv* div) const {
+                gen->gen_expr(div->rhs);
+                gen->gen_expr(div->lhs);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "    div rbx\n";
                 gen->push("rax");
             }
         };

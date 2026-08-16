@@ -17,6 +17,11 @@ namespace node
 
     struct NodeExpr;
 
+    struct NodeTermParen {
+        NodeExpr* expr;
+    };
+
+
     struct NodeBinExprAdd {
         NodeExpr* lhs;
         NodeExpr* rhs;
@@ -27,12 +32,22 @@ namespace node
         NodeExpr* rhs;
     };
 
+    struct NodeBinExprSub {
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+
+    struct NodeBinExprDiv {
+        NodeExpr* lhs;
+        NodeExpr* rhs;
+    };
+
     struct NodeBinExpr {
-        std::variant<NodeBinExprAdd*, NodeBinExprMulti*> var;
+        std::variant<NodeBinExprAdd*, NodeBinExprMulti*, NodeBinExprSub*, NodeBinExprDiv*> var;
     };
 
     struct NodeTerm {
-        std::variant<NodeTermIntlit*, NodeTermIdent*> var;
+        std::variant<NodeTermIntlit*, NodeTermIdent*, NodeTermParen*> var;
     };
 
     struct NodeExpr
@@ -91,6 +106,21 @@ public:
             term->var = term_ident;
             return term;
         }
+        else if (auto paren = try_consume(TokenType::open_paren)) {
+            auto expr = parse_expr();
+            if (!expr.has_value()) {
+                std::cerr << "Expected expression!" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            try_consume(TokenType::close_paren, "Expected `)`");
+
+            auto term_paren = m_allocator.alloc<node::NodeTermParen>();
+            term_paren->expr = expr.value();
+            auto term = m_allocator.alloc<node::NodeTerm>();
+            term->var = term_paren;
+            return term;
+        }
     }
 
     std::optional<node::NodeExpr*> parse_expr(int min_prec = 0)
@@ -141,6 +171,20 @@ public:
                 multi->lhs = expr_lhs2;
                 multi->rhs = expr_rhs.value();
                 expr->var = multi;
+            }
+            else if (op.type == TokenType::sub) {
+                auto sub = m_allocator.alloc<node::NodeBinExprSub>();
+                expr_lhs2->var = expr_lhs->var;
+                sub->lhs = expr_lhs2;
+                sub->rhs = expr_rhs.value();
+                expr->var = sub;
+            }
+            else if (op.type == TokenType::div) {
+                auto div = m_allocator.alloc<node::NodeBinExprDiv>();
+                expr_lhs2->var = expr_lhs->var;
+                div->lhs = expr_lhs2;
+                div->rhs = expr_rhs.value();
+                expr->var = div;
             }
 
             expr_lhs->var = expr;
