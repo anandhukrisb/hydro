@@ -17,6 +17,8 @@ enum class TokenType
     asterisk,
     sub,
     div,
+    open_curly,
+    close_curly,
 };
 
 std::optional<int> bin_prec(TokenType type) {
@@ -121,6 +123,14 @@ public:
             else if (peek().value() == '/') {
                 consume();
                 tokens.push_back({ .type = TokenType::div });
+            }
+            else if (peek().value() == '{') {
+                consume();
+                tokens.push_back({ .type = TokenType::open_curly });
+            }
+            else if (peek().value() == '}') {
+                consume();
+                tokens.push_back({ .type = TokenType::close_curly });
             }
             else if (std::isspace(peek().value()))
             {

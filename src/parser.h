@@ -69,8 +69,14 @@ namespace node
         NodeExpr* expr;
     };
 
+    struct NodeStmt;
+
+    struct NodeStmtScope {
+        std::vector<NodeStmt*> stmts;
+    };
+
     struct NodeStmt {
-        std::variant<NodeStmtExit*, NodeStmtLet*> var;
+        std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtScope*> var;
     };
 
     struct NodeProg {
