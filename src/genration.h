@@ -39,7 +39,7 @@ public:
                 }
                 const auto& var = (*it);
                 std::stringstream offset;
-                offset << "QWORD [rsp + " << (gen->m_stack_size - (*it).stack_loc - 1) * 8 << "]\n";
+                offset << "QWORD [rsp + " << (gen->m_stack_size - (*it).stack_loc - 1) * 8 << "]";
                 gen->push(offset.str());
             }
         };
@@ -145,8 +145,16 @@ public:
                 }
             }
 
-            void operator() (const node::NodeStmtScope* scope) const {
+            void operator() (const node::NodeScope* scope) const {
+                gen->begin_scope();
+                for (const node::NodeStmt* stmt : scope->stmts) {
+                    gen->gen_stmt(stmt);
+                }
+                gen->end_scope();
+            }
 
+            void operator() (const node::NodeStmtIf* stmt_if) const {
+                assert(false && "Not Implemented");
             }
 
         };
@@ -181,6 +189,22 @@ private:
         m_stack_size--;
     }
 
+    void begin_scope() {
+        m_scopes.push_back(m_vars.size());
+    }
+
+    void end_scope() {
+        size_t pop_count = m_vars.size() - m_scopes.back();
+        m_output << "    add rsp, " << pop_count * 8 << "\n";
+        m_stack_size -= pop_count;
+
+        for (int i = 0; i < pop_count; i++) {
+            m_vars.pop_back();
+        }
+
+        m_scopes.pop_back();
+    }
+
     struct Var {
         std::string name;
         size_t stack_loc;
@@ -190,4 +214,5 @@ private:
     std::stringstream m_output;
     size_t m_stack_size = 0;
     std::vector<Var> m_vars {};
+    std::vector<size_t> m_scopes {};
 };
