@@ -75,7 +75,7 @@ public:
                     buf.clear();
                 }
 
-                else if (buf == "if_") {
+                else if (buf == "if") {
                     tokens.push_back({ .type = TokenType::if_ });
                     buf.clear();
                 }

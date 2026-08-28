@@ -1,8 +1,6 @@
-let x = (10 - 2 * 3) / 2;
-let y = 15;
-{
-if(x) {
-    exit(x);
+let x = 2;
+if (x) {
+    exit(15);
 }
-}
+exit(1);
 
