@@ -1,6 +1,9 @@
 let x = 2;
-if (x - 1) {
-    exit(15);
-}
-exit(1);
 
+if (x - 2) {
+    exit(3);
+} elif (x - 2) {
+    exit(2);
+} else {
+    exit(1);
+}

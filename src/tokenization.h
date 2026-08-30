@@ -20,6 +20,8 @@ enum class TokenType
     open_curly,
     close_curly,
     if_,
+    elif,
+    else_,
 };
 
 inline std::optional<int> bin_prec(const TokenType type) {
@@ -79,6 +81,14 @@ public:
                     tokens.push_back({ .type = TokenType::if_ });
                     buf.clear();
                 }
+                else if (buf == "elif") {
+                    tokens.push_back({ .type = TokenType::elif });
+                    buf.clear();
+                }
+                else if (buf == "else") {
+                    tokens.push_back({ .type = TokenType::else_ });
+                    buf.clear();
+                }
                 else
                 {
                     tokens.push_back({.type = TokenType::ident, .value = buf});
@@ -96,6 +106,34 @@ public:
 
                 tokens.push_back({.type = TokenType::int_lit, .value = buf});
                 buf.clear();
+            }
+            else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') {
+                consume();
+                consume();
+
+                while (peek().has_value() && peek().value() != '\n') {
+                    consume();
+                }
+            }
+            else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '*') {
+                consume();
+                consume();
+
+                while (peek().has_value())
+                {
+                    if (peek().value() == '*' &&
+                       peek(1).has_value() && peek(1).value() == '/')
+                    {
+                        break;
+                    }
+                    consume();
+                }
+                if (peek().has_value()) {
+                    consume();
+                }
+                if (peek().has_value()) {
+                    consume();
+                }
             }
             else if (peek().value() == '(') {
                 consume();
